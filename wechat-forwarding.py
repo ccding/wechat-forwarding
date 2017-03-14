@@ -67,7 +67,9 @@ def get_whole_msg(msg, download=False, senders={}, receivers={}):
     ATTACHMENT, VIDEO, FRIENDS], isFriendChat=True, isGroupChat=True)
 def normal_msg(msg):
     msg_send = get_whole_msg(msg, download=True, senders=senders, receivers=from_group_names)
-    print msg_send
+    if len(msg_send) == 0:
+        return
+    print_msg(msg_send)
     for m in msg_send:
         for name in to_group_names:
             room = itchat.search_chatrooms(name=name)
