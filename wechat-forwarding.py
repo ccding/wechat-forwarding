@@ -6,6 +6,7 @@ reload(sys)
 sys.setdefaultencoding('UTF8')
 
 import os, re, shutil, time, collections, json
+from HTMLParser import HTMLParser
 
 import itchat
 from itchat.content import *
@@ -64,7 +65,8 @@ def get_whole_msg(msg, download=False, senders={}, receivers={}):
         return ['[%s]:' % (sender), c]
     c = msg['Text']
     if len(msg['Url']) > 0:
-        c += ' ' + msg['Url']
+        url = HTMLParser().unescape(msg['Url'])
+        c += ' ' + url
     return ['[%s]: %s' % (sender, c)]
 
 @itchat.msg_register([TEXT, PICTURE, MAP, CARD, SHARING, RECORDING,
