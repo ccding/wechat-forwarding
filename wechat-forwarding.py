@@ -62,9 +62,9 @@ def print_msg(msg):
     print json.dumps(msg).decode('unicode-escape').encode('utf8')
 
 def get_whole_msg(msg, download=False):
-    sender, receiver = get_sender_receiver(msg)
     if msg['FileName'][-4:] == 'gif': # can't handle gif pictures
         return []
+    sender, receiver = get_sender_receiver(msg)
     if len(msg['FileName']) > 0 and len(msg['Url']) == 0:
         if download: # download the file into data_path directory
             fn = os.path.join(data_path, msg['FileName'])
