@@ -13,7 +13,7 @@ from itchat.content import *
 sending_type = {'Picture': 'img', 'Video': 'vid'}
 data_path = 'data'
 from_group_names = {u'酒井 9#'}
-to_group_names = [u'酒井民间自救群']
+to_group_names = [u'酒井民间自救群', u'酒井 9# 二号']
 senders = {u'酒井9#'}
 
 def get_sender_receiver(msg):
