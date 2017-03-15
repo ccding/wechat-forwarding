@@ -42,7 +42,7 @@ def get_sender_receiver(msg):
         m = itchat.search_friends(userName=msg['ToUserName'])
         if m is not None:
             receiver = m['NickName']
-    return sender.strip(), receiver.strip()
+    return sender, receiver
 
 def print_msg(msg):
     if len(msg) == 0:
