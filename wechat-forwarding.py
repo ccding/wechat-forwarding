@@ -64,7 +64,7 @@ def print_msg(msg):
 def get_whole_msg(msg, download=False):
     sender, receiver = get_sender_receiver(msg)
     if msg['FileName'][-4:] == 'gif': # can't handle gif pictures
-        return [], sender, rreceiver
+        return []
     if len(msg['FileName']) > 0 and len(msg['Url']) == 0:
         if download: # download the file into data_path directory
             fn = os.path.join(data_path, msg['FileName'])
@@ -72,7 +72,7 @@ def get_whole_msg(msg, download=False):
             c = '@%s@%s' % (sending_type.get(msg['Type'], 'fil'), fn)
         else:
             c = '@%s@%s' % (sending_type.get(msg['Type'], 'fil'), msg['FileName'])
-        return ['[%s]:' % (sender), c], sender, receiver
+        return ['[%s]:' % (sender), c]
     c = msg['Text']
     if len(msg['Url']) > 0:
         try: # handle map label
@@ -86,17 +86,18 @@ def get_whole_msg(msg, download=False):
             pass
         url = HTMLParser().unescape(msg['Url'])
         c += ' ' + url
-    return ['[%s]: %s' % (sender, c)], sender, receiver
+    return ['[%s]: %s' % (sender, c)]
 
 @bot.msg_register([TEXT, PICTURE, MAP, CARD, SHARING, RECORDING,
     ATTACHMENT, VIDEO, FRIENDS], isFriendChat=True, isGroupChat=True)
 def normal_msg(msg):
-    msg_send, sender, receiver = get_whole_msg(msg, download=True)
+    sender, receiver = get_sender_receiver(msg)
+    if (sender == nickname) or (receiver not in from_group_names):
+        return
+    msg_send = get_whole_msg(msg, download=True)
     if len(msg_send) == 0:
         return
     print_msg(msg_send)
-    if (sender == nickname) or (receiver not in from_group_names):
-        return
     for m in msg_send:
         for name in to_group_names:
             if name == receiver:
