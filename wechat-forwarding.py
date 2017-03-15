@@ -14,8 +14,8 @@ from itchat.content import *
 
 sending_type = {'Picture': 'img', 'Video': 'vid'}
 data_path = 'data'
-from_group_names = {u'酒井 9#', u'酒井民间自救群'}
-to_group_names = [u'酒井 9#', u'酒井民间自救群']
+from_group_names = {u'酒井 9#', u'酒井民间自救群', u'酒井 9# 互联B'}
+to_group_names = [u'酒井 9#', u'酒井民间自救群', u'酒井 9# 互联B']
 nickname = ''
 bot = None
 
@@ -99,13 +99,16 @@ def normal_msg(msg):
         return
     print_msg(msg_send)
     for m in msg_send:
-        for name in to_group_names:
-            if name == receiver:
+        for tosend in to_group_names:
+            if tosend == receiver:
                 continue
-            room = bot.search_chatrooms(name=name)
-            if room is not None and len(room) > 0:
-                username = room[0]['UserName']
-                bot.send(m, toUserName=username)
+            room = bot.search_chatrooms(name=tosend)
+            if room is None:
+                continue
+            for r in room:
+                if r['NickName'] != tosend:
+                    continue
+                bot.send(m, toUserName=r['UserName'])
 
 if __name__ == '__main__':
     bot.run()
