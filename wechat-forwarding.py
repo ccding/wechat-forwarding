@@ -14,7 +14,7 @@ sending_type = {'Picture': 'img', 'Video': 'vid'}
 data_path = 'data'
 from_group_names = {u'酒井 9#'}
 to_group_names = [u'酒井民间自救群']
-senders = {u'煎饼'}
+senders = {u'酒井9#'}
 
 def get_sender_receiver(msg):
     sender = None
@@ -44,9 +44,13 @@ def get_sender_receiver(msg):
     return sender.strip(), receiver.strip()
 
 def print_msg(msg):
+    if len(msg) == 0:
+        return
     print json.dumps(msg).decode('unicode-escape').encode('utf8')
 
 def get_whole_msg(msg, download=False, senders={}, receivers={}):
+    if msg['FileName'][-4:] == 'gif': # can't handle gif pictures
+        return []
     sender, receiver = get_sender_receiver(msg)
     if (sender in senders) or (receiver not in receivers):
         return []
@@ -57,11 +61,11 @@ def get_whole_msg(msg, download=False, senders={}, receivers={}):
             c = '@%s@%s' % (sending_type.get(msg['Type'], 'fil'), fn)
         else:
             c = '@%s@%s' % (sending_type.get(msg['Type'], 'fil'), msg['FileName'])
-        return ['[%s]->[%s]:' % (sender, receiver), c]
+        return ['[%s]:' % (sender), c]
     c = msg['Text']
     if len(msg['Url']) > 0:
         c += ' ' + msg['Url']
-    return ['[%s]->[%s]: %s' % (sender, receiver, c)]
+    return ['[%s]: %s' % (sender, c)]
 
 @itchat.msg_register([TEXT, PICTURE, MAP, CARD, SHARING, RECORDING,
     ATTACHMENT, VIDEO, FRIENDS], isFriendChat=True, isGroupChat=True)
