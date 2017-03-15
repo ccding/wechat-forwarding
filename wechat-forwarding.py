@@ -7,6 +7,7 @@ sys.setdefaultencoding('UTF8')
 
 import os, re, shutil, time, collections, json
 from HTMLParser import HTMLParser
+from xml.etree import ElementTree as ETree
 
 import itchat
 from itchat.content import *
@@ -70,6 +71,7 @@ def get_whole_msg(msg, download=False, senders={}, receivers={}):
             if content_tree is not None:
                 map_label = content_tree.find('location')
                 if map_label is not None:
+                    c += ' ' + map_label.attrib['poiname']
                     c += ' ' + map_label.attrib['label']
         except:
             pass
