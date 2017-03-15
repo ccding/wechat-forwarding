@@ -14,8 +14,8 @@ from itchat.content import *
 
 sending_type = {'Picture': 'img', 'Video': 'vid'}
 data_path = 'data'
-from_group_names = {u'酒井 9#'}
-to_group_names = [u'酒井民间自救群', u'酒井 9# 二号']
+from_group_names = {u'酒井 9#', u'酒井民间自救群'}
+to_group_names = [u'酒井 9#', u'酒井民间自救群']
 nickname = ''
 bot = None
 
@@ -61,12 +61,10 @@ def print_msg(msg):
         return
     print json.dumps(msg).decode('unicode-escape').encode('utf8')
 
-def get_whole_msg(msg, download=False, receivers={}):
-    if msg['FileName'][-4:] == 'gif': # can't handle gif pictures
-        return []
+def get_whole_msg(msg, download=False):
     sender, receiver = get_sender_receiver(msg)
-    if (sender == nickname) or (receiver not in receivers):
-        return []
+    if msg['FileName'][-4:] == 'gif': # can't handle gif pictures
+        return [], sender, rreceiver
     if len(msg['FileName']) > 0 and len(msg['Url']) == 0:
         if download: # download the file into data_path directory
             fn = os.path.join(data_path, msg['FileName'])
@@ -74,7 +72,7 @@ def get_whole_msg(msg, download=False, receivers={}):
             c = '@%s@%s' % (sending_type.get(msg['Type'], 'fil'), fn)
         else:
             c = '@%s@%s' % (sending_type.get(msg['Type'], 'fil'), msg['FileName'])
-        return ['[%s]:' % (sender), c]
+        return ['[%s]:' % (sender), c], sender, receiver
     c = msg['Text']
     if len(msg['Url']) > 0:
         try: # handle map label
@@ -88,17 +86,21 @@ def get_whole_msg(msg, download=False, receivers={}):
             pass
         url = HTMLParser().unescape(msg['Url'])
         c += ' ' + url
-    return ['[%s]: %s' % (sender, c)]
+    return ['[%s]: %s' % (sender, c)], sender, receiver
 
 @bot.msg_register([TEXT, PICTURE, MAP, CARD, SHARING, RECORDING,
     ATTACHMENT, VIDEO, FRIENDS], isFriendChat=True, isGroupChat=True)
 def normal_msg(msg):
-    msg_send = get_whole_msg(msg, download=True, receivers=from_group_names)
+    msg_send, sender, receiver = get_whole_msg(msg, download=True)
     if len(msg_send) == 0:
         return
     print_msg(msg_send)
+    if (sender == nickname) or (receiver not in from_group_names):
+        return
     for m in msg_send:
         for name in to_group_names:
+            if name == receiver:
+                continue
             room = bot.search_chatrooms(name=name)
             if room is not None and len(room) > 0:
                 username = room[0]['UserName']
