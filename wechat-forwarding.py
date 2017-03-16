@@ -93,8 +93,12 @@ def get_whole_msg(msg, prefix, download=False):
 def normal_msg(msg):
     to_username = msg['ToUserName']
     from_username = msg['FromUserName']
-    if to_username[0:2] == '@@': # don't handle group chat message sent by myself
-        return
+    if to_username[0:2] == '@@': # message sent by myself
+        if msg['Type'] != 'Text': # ignore all none-text msgs to avoid loop
+            return
+        if msg['Text'][0] == '[': # if a text msg is a forward, do nothing
+            return
+        to_username, from_username = from_username, to_username
     sender, receiver = get_sender_receiver(msg)
     if receiver not in from_group_names: # if not in the from_group_names, do nothing
         return
