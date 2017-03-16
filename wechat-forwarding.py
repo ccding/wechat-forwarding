@@ -6,6 +6,7 @@ reload(sys)
 sys.setdefaultencoding('UTF8')
 
 import os, re, shutil, time, collections, json
+import requests
 from HTMLParser import HTMLParser
 from xml.etree import ElementTree as ETree
 
@@ -28,6 +29,15 @@ if __name__ == '__main__':
     bot = itchat.new_instance()
     bot.auto_login(hotReload=True, enableCmdQR=2)
     nickname = bot.loginInfo['User']['NickName']
+
+# tuling chat bot
+def talks_robot(info):
+    api_url = 'http://www.tuling123.com/openapi/api'
+    apikey = ''
+    data = {'key': apikey, 'info': info}
+    req = requests.post(api_url, data=data).text
+    replys = json.loads(req)['text']
+    return replys
 
 def get_sender_receiver(msg):
     sender = nickname
@@ -115,6 +125,15 @@ def normal_msg(msg):
                 continue
             for m in msg_send: # iterate messages (for images, videos, and files)
                 bot.send(m, toUserName=r['UserName'])
+    # use tuling chat bot to reply
+    if msg['isAt'] == True and msg['Type'] == 'Text' and msg['ToUserName'][0:2] != '@@':
+        info = talks_robot(msg['Text'])
+        for tosend in to_group_names:
+            room = bot.search_chatrooms(name=tosend)
+            for r in room:
+                if r['NickName'] != tosend: # check group name exact match
+                    continue
+                bot.send(info, toUserName=r['UserName'])
 
 if __name__ == '__main__':
     bot.run()
