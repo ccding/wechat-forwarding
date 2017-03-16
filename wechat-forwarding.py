@@ -92,10 +92,11 @@ def get_whole_msg(msg, prefix, download=False):
     ATTACHMENT, VIDEO], isFriendChat=False, isGroupChat=True)
 def normal_msg(msg):
     to_username = msg['ToUserName']
-    if to_username[0:2] == '@@': # group chat sent by myself
+    from_username = msg['FromUserName']
+    if to_username[0:2] == '@@': # don't handle group chat message sent by myself
         return
     sender, receiver = get_sender_receiver(msg)
-    if receiver not in from_group_names:
+    if receiver not in from_group_names: # if not in the from_group_names, do nothing
         return
     msg_send = get_whole_msg(msg, prefix=sender, download=True)
     if len(msg_send) == 0:
@@ -104,11 +105,11 @@ def normal_msg(msg):
     for tosend in to_group_names:
         room = bot.search_chatrooms(name=tosend)
         for r in room:
-            if r['UserName'] == to_username: # don't send back to the source
+            if r['UserName'] == from_username: # don't send back to the source
                 continue
-            if r['NickName'] != tosend: # check exact match
+            if r['NickName'] != tosend: # check group name exact match
                 continue
-            for m in msg_send:
+            for m in msg_send: # iterate messages (for images, videos, and files)
                 bot.send(m, toUserName=r['UserName'])
 
 if __name__ == '__main__':
