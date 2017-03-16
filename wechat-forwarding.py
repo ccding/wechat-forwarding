@@ -103,10 +103,9 @@ def get_whole_msg(msg, prefix, download=False):
 @bot.msg_register([TEXT, PICTURE, MAP, SHARING, RECORDING, ATTACHMENT, VIDEO],
         isFriendChat=False, isGroupChat=True)
 def normal_msg(msg):
-    to_username = msg['ToUserName']
-    from_username = msg['FromUserName']
-    if to_username[0:2] == '@@': # message sent by myself
-        to_username, from_username = from_username, to_username
+    group = msg['FromUserName']
+    if msg['ToUserName'][0:2] == '@@': # message sent by myself
+        group = msg['ToUserName']
     sender, receiver = get_sender_receiver(msg)
     if receiver not in from_group_names: # if not in the from_group_names, do nothing
         return
@@ -118,7 +117,7 @@ def normal_msg(msg):
     for tosend in to_group_names:
         room = bot.search_chatrooms(name=tosend)
         for r in room:
-            if r['UserName'] == from_username: # don't send back to the source
+            if r['UserName'] == group: # don't send back to the source
                 continue
             if r['NickName'] != tosend: # check group name exact match
                 continue
