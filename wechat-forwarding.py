@@ -106,10 +106,6 @@ def normal_msg(msg):
     to_username = msg['ToUserName']
     from_username = msg['FromUserName']
     if to_username[0:2] == '@@': # message sent by myself
-        if msg['Type'] != 'Text': # ignore all none-text msgs to avoid loop
-            return
-        if msg['Text'][0] == '[': # if a text msg is a forward, do nothing
-            return
         to_username, from_username = from_username, to_username
     sender, receiver = get_sender_receiver(msg)
     if receiver not in from_group_names: # if not in the from_group_names, do nothing
@@ -129,7 +125,9 @@ def normal_msg(msg):
             for m in msg_send: # iterate messages (for images, videos, and files)
                 bot.send(m, toUserName=r['UserName'])
     # use tuling chat bot to reply
-    if msg['isAt'] == True and msg['Type'] == 'Text' and msg['ToUserName'][0:2] != '@@':
+    if 'isAt' in msg and msg['isAt'] == True and \
+            msg['Type'] == 'Text' and \
+            msg['ToUserName'][0:2] != '@@':
         info = talks_robot(msg['Text'].replace(u'@' + nickname, '').strip())
         for tosend in to_group_names:
             room = bot.search_chatrooms(name=tosend)
