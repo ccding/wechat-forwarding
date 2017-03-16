@@ -61,8 +61,7 @@ def print_msg(msg):
         return
     print json.dumps(msg).decode('unicode-escape').encode('utf8')
 
-def get_whole_msg(msg, download=False):
-    sender, receiver = get_sender_receiver(msg)
+def get_whole_msg(msg, prefix, download=False):
     if len(msg['FileName']) > 0 and len(msg['Url']) == 0:
         if download: # download the file into data_path directory
             fn = os.path.join(data_path, msg['FileName'])
@@ -72,42 +71,44 @@ def get_whole_msg(msg, download=False):
             c = '@%s@%s' % (sending_type.get(msg['Type'], 'fil'), fn)
         else:
             c = '@%s@%s' % (sending_type.get(msg['Type'], 'fil'), msg['FileName'])
-        return ['[%s]:' % (sender), c]
+        return ['[%s]:' % (prefix), c]
     c = msg['Text']
     if len(msg['Url']) > 0:
-        try: # handle map label
-            content_tree = ETree.fromstring(msg['OriContent'])
-            if content_tree is not None:
-                map_label = content_tree.find('location')
-                if map_label is not None:
-                    c += ' ' + map_label.attrib['poiname']
-                    c += ' ' + map_label.attrib['label']
-        except:
-            pass
+        if len(msg['OriContent']) > 0:
+            try: # handle map label
+                content_tree = ETree.fromstring(msg['OriContent'])
+                if content_tree is not None:
+                    map_label = content_tree.find('location')
+                    if map_label is not None:
+                        c += ' ' + map_label.attrib['poiname']
+                        c += ' ' + map_label.attrib['label']
+            except:
+                pass
         url = HTMLParser().unescape(msg['Url'])
         c += ' ' + url
-    return ['[%s]: %s' % (sender, c)]
+    return ['[%s]: %s' % (prefix, c)]
 
-@bot.msg_register([TEXT, PICTURE, MAP, CARD, SHARING, RECORDING,
-    ATTACHMENT, VIDEO, FRIENDS], isFriendChat=True, isGroupChat=True)
+@bot.msg_register([TEXT, PICTURE, MAP, SHARING, RECORDING,
+    ATTACHMENT, VIDEO], isFriendChat=False, isGroupChat=True)
 def normal_msg(msg):
-    sender, receiver = get_sender_receiver(msg)
-    if (sender == nickname) or (receiver not in from_group_names):
+    to_username = msg['ToUserName']
+    if to_username[0:2] == '@@': # group chat sent by myself
         return
-    msg_send = get_whole_msg(msg, download=True)
+    sender, receiver = get_sender_receiver(msg)
+    if receiver not in from_group_names:
+        return
+    msg_send = get_whole_msg(msg, prefix=sender, download=True)
     if len(msg_send) == 0:
         return
     print_msg(msg_send)
-    for m in msg_send:
-        for tosend in to_group_names:
-            if tosend == receiver:
+    for tosend in to_group_names:
+        room = bot.search_chatrooms(name=tosend)
+        for r in room:
+            if r['UserName'] == to_username: # don't send back to the source
                 continue
-            room = bot.search_chatrooms(name=tosend)
-            if room is None:
+            if r['NickName'] != tosend: # check exact match
                 continue
-            for r in room:
-                if r['NickName'] != tosend:
-                    continue
+            for m in msg_send:
                 bot.send(m, toUserName=r['UserName'])
 
 if __name__ == '__main__':
