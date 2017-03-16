@@ -100,9 +100,13 @@ def get_whole_msg(msg, prefix, download=False):
         c += ' ' + url
     return ['%s: %s' % (prefix, c)]
 
+@bot.msg_register([TEXT], isFriendChat=True, isGroupChat=False)
+def personal_msg(msg):
+    return talks_robot(msg['Text'].strip())
+
 @bot.msg_register([TEXT, PICTURE, MAP, SHARING, RECORDING, ATTACHMENT, VIDEO],
         isFriendChat=False, isGroupChat=True)
-def normal_msg(msg):
+def group_msg(msg):
     group = msg['FromUserName']
     if msg['ToUserName'][0:2] == '@@': # message sent by myself
         group = msg['ToUserName']
