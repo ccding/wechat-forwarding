@@ -15,7 +15,9 @@ from itchat.content import *
 
 sending_type = {'Picture': 'img', 'Video': 'vid'}
 data_path = 'data'
-from_group_names = {u'酒井 9#', u'酒井民间自救群', u'酒井 9# 互联B'}
+from_group_names = {u'酒井 9#':u'[阴险]',
+                    u'酒井民间自救群':u'[菜刀]',
+                    u'酒井 9# 互联B':u'[月亮]'}
 to_group_names = [u'酒井 9#', u'酒井民间自救群', u'酒井 9# 互联B']
 nickname = ''
 bot = None
@@ -81,7 +83,7 @@ def get_whole_msg(msg, prefix, download=False):
             c = '@%s@%s' % (sending_type.get(msg['Type'], 'fil'), fn)
         else:
             c = '@%s@%s' % (sending_type.get(msg['Type'], 'fil'), msg['FileName'])
-        return ['[%s]:' % (prefix), c]
+        return ['%s:' % (prefix), c]
     c = msg['Text']
     if len(msg['Url']) > 0:
         if len(msg['OriContent']) > 0:
@@ -96,10 +98,10 @@ def get_whole_msg(msg, prefix, download=False):
                 pass
         url = HTMLParser().unescape(msg['Url'])
         c += ' ' + url
-    return ['[%s]: %s' % (prefix, c)]
+    return ['%s: %s' % (prefix, c)]
 
-@bot.msg_register([TEXT, PICTURE, MAP, SHARING, RECORDING,
-    ATTACHMENT, VIDEO], isFriendChat=False, isGroupChat=True)
+@bot.msg_register([TEXT, PICTURE, MAP, SHARING, RECORDING, ATTACHMENT, VIDEO],
+        isFriendChat=False, isGroupChat=True)
 def normal_msg(msg):
     to_username = msg['ToUserName']
     from_username = msg['FromUserName']
@@ -112,7 +114,8 @@ def normal_msg(msg):
     sender, receiver = get_sender_receiver(msg)
     if receiver not in from_group_names: # if not in the from_group_names, do nothing
         return
-    msg_send = get_whole_msg(msg, prefix=sender, download=True)
+    prefix = '%s[%s]' % (from_group_names[receiver], sender)
+    msg_send = get_whole_msg(msg, prefix=prefix, download=True)
     if len(msg_send) == 0:
         return
     print_msg(msg_send)
@@ -127,7 +130,7 @@ def normal_msg(msg):
                 bot.send(m, toUserName=r['UserName'])
     # use tuling chat bot to reply
     if msg['isAt'] == True and msg['Type'] == 'Text' and msg['ToUserName'][0:2] != '@@':
-        info = talks_robot(msg['Text'])
+        info = talks_robot(msg['Text'].replace(u'@' + nickname, '').strip())
         for tosend in to_group_names:
             room = bot.search_chatrooms(name=tosend)
             for r in room:
