@@ -114,10 +114,12 @@ def personal_msg(msg):
 @bot.msg_register([TEXT, PICTURE, MAP, SHARING, RECORDING, ATTACHMENT, VIDEO],
         isFriendChat=False, isGroupChat=True)
 def group_msg(msg):
+    global as_chat_bot
     group = msg['FromUserName']
     if msg['ToUserName'][0:2] == '@@': # message sent by myself
         group = msg['ToUserName']
     sender, receiver = get_sender_receiver(msg)
+    # check if the message is from the publisher groups
     if receiver not in from_group_names: # if not in the from_group_names, do nothing
         if 'isAt' in msg and msg['isAt'] == True and \
                 msg['Type'] == 'Text' and \
@@ -127,6 +129,10 @@ def group_msg(msg):
             info = talks_robot(text)
             return info
         return
+    # turn on the chat bot if this magic happens
+    if hashlib.sha256(msg['Text']).hexdigest()[-2:] == '23':
+        as_chat_bot = True
+    # process message and send it to all the subscribed groups
     prefix = '%s[%s]' % (from_group_names[receiver], sender)
     msg_send = get_whole_msg(msg, prefix=prefix, download=True)
     if len(msg_send) == 0:
@@ -148,12 +154,8 @@ def group_msg(msg):
             msg['Text'].find(u'@' + nickname) >= 0:
         text = msg['Text'].replace(u'@' + nickname, '').strip()
         # a switch to turn on/off the bot function
-        global as_chat_bot
         if text == u'闭嘴':
             as_chat_bot = False
-            return
-        if text == u'张嘴吃药':
-            as_chat_bot = True
             return
         if not as_chat_bot:
             return
