@@ -131,7 +131,8 @@ def group_msg(msg):
             return info
         return
     # turn on the chat bot if this magic happens
-    if hashlib.sha256(msg['Text']).hexdigest()[-2:] == '23':
+    if msg['Type'] == 'Text' and \
+            hashlib.sha256(msg['Text']).hexdigest()[-2:] == '23':
         as_chat_bot = True
     # process message and send it to all the subscribed groups
     prefix = '%s[%s]' % (from_group_names[receiver], sender)
