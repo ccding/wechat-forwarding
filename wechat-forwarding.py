@@ -21,6 +21,7 @@ from_group_names = {u'酒井 9#':u'[阴险]',
 to_group_names = [u'酒井 9#', u'酒井民间自救群', u'酒井 9# 互联B']
 nickname = ''
 bot = None
+as_chat_bot = True
 
 if __name__ == '__main__':
     if not os.path.exists(data_path):
@@ -102,7 +103,13 @@ def get_whole_msg(msg, prefix, download=False):
 
 @bot.msg_register([TEXT], isFriendChat=True, isGroupChat=False)
 def personal_msg(msg):
-    return talks_robot(msg['Text'].strip())
+    global as_chat_bot
+    text = msg['Text'].strip()
+    if text == u'闭嘴':
+        as_chat_bot = False
+    if text == u'张嘴吃药':
+        as_chat_bot = True
+    return talks_robot(text)
 
 @bot.msg_register([TEXT, PICTURE, MAP, SHARING, RECORDING, ATTACHMENT, VIDEO],
         isFriendChat=False, isGroupChat=True)
@@ -131,7 +138,18 @@ def group_msg(msg):
     if 'isAt' in msg and msg['isAt'] == True and \
             msg['Type'] == 'Text' and \
             msg['ToUserName'][0:2] != '@@':
-        info = talks_robot(msg['Text'].replace(u'@' + nickname, '').strip())
+        text = msg['Text'].replace(u'@' + nickname, '').strip()
+        # a switch to turn on/off the bot function
+        global as_chat_bot
+        if text == u'闭嘴':
+            as_chat_bot = False
+            return
+        if text == u'张嘴吃药':
+            as_chat_bot = True
+            return
+        if not as_chat_bot:
+            return
+        info = talks_robot(text)
         for tosend in to_group_names:
             room = bot.search_chatrooms(name=tosend)
             for r in room:
