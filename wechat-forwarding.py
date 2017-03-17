@@ -9,6 +9,7 @@ import os, re, shutil, time, collections, json
 import requests
 from HTMLParser import HTMLParser
 from xml.etree import ElementTree as ETree
+import hashlib
 
 import itchat
 from itchat.content import *
