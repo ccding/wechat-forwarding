@@ -119,6 +119,13 @@ def group_msg(msg):
         group = msg['ToUserName']
     sender, receiver = get_sender_receiver(msg)
     if receiver not in from_group_names: # if not in the from_group_names, do nothing
+        if 'isAt' in msg and msg['isAt'] == True and \
+                msg['Type'] == 'Text' and \
+                msg['ToUserName'][0:2] != '@@' and \
+                msg['Text'].find(u'@' + nickname) >= 0:
+            text = msg['Text'].replace(u'@' + nickname, '').strip()
+            info = talks_robot(text)
+            return info
         return
     prefix = '%s[%s]' % (from_group_names[receiver], sender)
     msg_send = get_whole_msg(msg, prefix=prefix, download=True)
@@ -137,7 +144,8 @@ def group_msg(msg):
     # use tuling chat bot to reply
     if 'isAt' in msg and msg['isAt'] == True and \
             msg['Type'] == 'Text' and \
-            msg['ToUserName'][0:2] != '@@':
+            msg['ToUserName'][0:2] != '@@' and \
+            msg['Text'].find(u'@' + nickname) >= 0:
         text = msg['Text'].replace(u'@' + nickname, '').strip()
         # a switch to turn on/off the bot function
         global as_chat_bot
