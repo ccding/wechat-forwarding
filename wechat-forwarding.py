@@ -115,6 +115,10 @@ def personal_msg(msg):
         as_chat_bot = True
     return talks_robot(text)
 
+@bot.msg_register([FRIENDS])
+def accept_friend(msg):
+    bot.add_friend(msg['RecommendInfo']['UserName'], 3)
+
 @bot.msg_register([TEXT, PICTURE, MAP, SHARING, RECORDING, ATTACHMENT, VIDEO],
         isFriendChat=False, isGroupChat=True)
 def group_msg(msg):
