@@ -16,10 +16,13 @@ from itchat.content import *
 
 sending_type = {'Picture': 'img', 'Video': 'vid'}
 data_path = 'data'
-from_group_names = {u'酒井 9#':u'[阴险]',
-                    u'酒井民间自救群':u'[菜刀]',
-                    u'酒井 9# 互联B':u'[月亮]'}
-to_group_names = [u'酒井 9#', u'酒井民间自救群', u'酒井 9# 互联B']
+group_uin = {u'酒井 9#': '42235582@chatroom',
+             u'酒井民间自救群': '2424504406@chatroom',
+             u'酒井 9# 互联B': '6203978346@chatroom'}
+publishers = {u'酒井 9#': u'[阴险]',
+              u'酒井民间自救群': u'[菜刀]',
+              u'酒井 9# 互联B': u'[月亮]'}
+subscribers = [u'酒井 9#', u'酒井民间自救群', u'酒井 9# 互联B']
 nickname = ''
 bot = None
 as_chat_bot = True
@@ -121,7 +124,7 @@ def group_msg(msg):
         group = msg['ToUserName']
     sender, receiver = get_sender_receiver(msg)
     # check if the message is from the publisher groups
-    if receiver not in from_group_names: # if not in the from_group_names, do nothing
+    if receiver not in publishers: # if not in the publishers, do nothing
         if 'isAt' in msg and msg['isAt'] == True and \
                 msg['Type'] == 'Text' and \
                 msg['ToUserName'][0:2] != '@@' and \
@@ -135,14 +138,16 @@ def group_msg(msg):
             hashlib.sha256(msg['Text']).hexdigest()[-2:] == '23':
         as_chat_bot = True
     # process message and send it to all the subscribed groups
-    prefix = '%s[%s]' % (from_group_names[receiver], sender)
+    prefix = '%s[%s]' % (publishers[receiver], sender)
     msg_send = get_whole_msg(msg, prefix=prefix, download=True)
     if len(msg_send) == 0:
         return
     print_msg(msg_send)
-    for tosend in to_group_names:
+    for tosend in subscribers:
         room = bot.search_chatrooms(name=tosend)
         for r in room:
+            if r['Uin'] != group_uin[tosend]: # check uin
+                continue
             if r['UserName'] == group: # don't send back to the source
                 continue
             if r['NickName'] != tosend: # check group name exact match
@@ -162,9 +167,11 @@ def group_msg(msg):
         if not as_chat_bot:
             return
         info = talks_robot(text)
-        for tosend in to_group_names:
+        for tosend in subscribers:
             room = bot.search_chatrooms(name=tosend)
             for r in room:
+                if r['Uin'] != group_uin[tosend]: # check uin
+                    continue
                 if r['NickName'] != tosend: # check group name exact match
                     continue
                 bot.send(info, toUserName=r['UserName'])
