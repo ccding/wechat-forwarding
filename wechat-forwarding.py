@@ -122,20 +122,27 @@ def accept_friend(msg):
 @bot.msg_register([TEXT, PICTURE, MAP, SHARING, RECORDING, ATTACHMENT, VIDEO],
         isFriendChat=False, isGroupChat=True)
 def group_msg(msg):
+    # chat bot functionality
     global as_chat_bot
+    if 'isAt' in msg and msg['isAt'] == True and \
+            msg['Type'] == 'Text' and \
+            msg['ToUserName'][0:2] != '@@' and \
+            msg['Text'].find(u'@' + nickname) >= 0:
+        text = msg['Text'].replace(u'@' + nickname, '').strip()
+        if text == u'闭嘴':
+            as_chat_bot = False
+            return
+        if as_chat_bot:
+            info = talks_robot(text)
+            return info
+        return
+    # forwarding functionality
     group = msg['FromUserName']
     if msg['ToUserName'][0:2] == '@@': # message sent by myself
         group = msg['ToUserName']
     sender, receiver = get_sender_receiver(msg)
     # check if the message is from the publisher groups
     if receiver not in publishers: # if not in the publishers, do nothing
-        if 'isAt' in msg and msg['isAt'] == True and \
-                msg['Type'] == 'Text' and \
-                msg['ToUserName'][0:2] != '@@' and \
-                msg['Text'].find(u'@' + nickname) >= 0:
-            text = msg['Text'].replace(u'@' + nickname, '').strip()
-            info = talks_robot(text)
-            return info
         return
     # turn on the chat bot if this magic happens
     if msg['Type'] == 'Text' and \
@@ -158,27 +165,6 @@ def group_msg(msg):
                 continue
             for m in msg_send: # iterate messages (for images, videos, and files)
                 bot.send(m, toUserName=r['UserName'])
-    # use tuling chat bot to reply
-    if 'isAt' in msg and msg['isAt'] == True and \
-            msg['Type'] == 'Text' and \
-            msg['ToUserName'][0:2] != '@@' and \
-            msg['Text'].find(u'@' + nickname) >= 0:
-        text = msg['Text'].replace(u'@' + nickname, '').strip()
-        # a switch to turn on/off the bot function
-        if text == u'闭嘴':
-            as_chat_bot = False
-            return
-        if not as_chat_bot:
-            return
-        info = talks_robot(text)
-        for tosend in subscribers:
-            room = bot.search_chatrooms(name=tosend)
-            for r in room:
-                if r['Uin'] != group_uin[tosend]: # check uin
-                    continue
-                if r['NickName'] != tosend: # check group name exact match
-                    continue
-                bot.send(info, toUserName=r['UserName'])
 
 if __name__ == '__main__':
     bot.run()
