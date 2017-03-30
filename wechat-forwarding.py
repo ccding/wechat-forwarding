@@ -41,7 +41,7 @@ if __name__ == '__main__':
 def talks_robot(info):
     api_url = 'http://www.tuling123.com/openapi/api'
     apikey = ''
-    data = {'key': apikey, 'info': info}
+    data = {'key': apikey, 'info': info.lower()}
     req = requests.post(api_url, data=data).text
     replys = json.loads(req)['text']
     return replys
@@ -124,7 +124,7 @@ def accept_friend(msg):
 def group_msg(msg):
     # chat bot functionality
     global as_chat_bot
-    if 'isAt' in msg and msg['isAt'] == True and \
+    if 'IsAt' in msg and msg['IsAt'] == True and \
             msg['Type'] == 'Text' and \
             msg['ToUserName'][0:2] != '@@' and \
             msg['Text'].find(u'@' + nickname) >= 0:
