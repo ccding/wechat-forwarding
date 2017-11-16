@@ -42,7 +42,7 @@ def talks_robot(info):
     api_url = 'http://www.tuling123.com/openapi/api'
     apikey = ''
     data = {'key': apikey, 'info': info.lower()}
-    req = requests.post(api_url, data=data).text
+    req = requests.post(api_url, data=data, timeout=10).text
     replys = json.loads(req)['text']
     return replys
 
@@ -134,6 +134,12 @@ def group_msg(msg):
             return
         if as_chat_bot:
             info = talks_robot(text)
+            if info.find('不知道') >= 0:
+                return
+            if info.find('不会') >= 0:
+                return
+            if info.find('抱歉') >= 0:
+                return
             return info
         return
     # forwarding functionality
@@ -141,6 +147,8 @@ def group_msg(msg):
     if msg['ToUserName'][0:2] == '@@': # message sent by myself
         group = msg['ToUserName']
     sender, receiver = get_sender_receiver(msg)
+    if sender == '':
+        sender = nickname
     # check if the message is from the publisher groups
     if receiver not in publishers: # if not in the publishers, do nothing
         return
@@ -157,8 +165,6 @@ def group_msg(msg):
     for tosend in subscribers:
         room = bot.search_chatrooms(name=tosend)
         for r in room:
-            if r['Uin'] != group_uin[tosend]: # check uin
-                continue
             if r['UserName'] == group: # don't send back to the source
                 continue
             if r['NickName'] != tosend: # check group name exact match
