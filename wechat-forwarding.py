@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*-encoding:utf-8-*-
 
-import sys, os, re, shutil, time, collections, json
-import requests
-import html
+import os, json, requests, html
 from xml.etree import ElementTree as ETree
 
 import itchat
@@ -11,16 +9,14 @@ from itchat.content import *
 
 sending_type = {'Picture': 'img', 'Video': 'vid'}
 data_path = 'data'
-publishers = {u'酒井 9#': u'[阴险]',
-              u'酒井民间自救群': u'[菜刀]',
-              u'酒井Tux': u'[菜刀]',
-              u'酒井 9# 互联B': u'[月亮]'}
-subscribers = [u'酒井 9#', u'酒井民间自救群', u'酒井 9# 互联B']
 nickname = ''
-bot = None
 as_chat_bot = True
+bot = None
+config = {}
 
 if __name__ == '__main__':
+    with open('config.json', 'r') as fin:
+        config = json.loads(fin.read())
     if not os.path.exists(data_path):
         os.mkdir(data_path)
     # if the QR code doesn't show correctly, you can try to change the value
@@ -35,9 +31,19 @@ def talks_robot(info):
     api_url = 'http://www.tuling123.com/openapi/api'
     apikey = ''
     data = {'key': apikey, 'info': info.lower()}
-    req = requests.post(api_url, data=data, timeout=10).text
-    replys = json.loads(req)['text']
-    return replys
+    try:
+        req = requests.post(api_url, data=data, timeout=5).text
+        txt = json.loads(req)['text']
+        if txt.find(u'不知道') >= 0:
+            return
+        if txt.find(u'不会') >= 0:
+            return
+        if txt.find(u'抱歉') >= 0:
+            return
+        return txt
+    except:
+        pass
+    return None
 
 def get_sender_receiver(msg):
     sender = nickname
@@ -67,11 +73,9 @@ def get_sender_receiver(msg):
     return html.unescape(sender), html.unescape(receiver)
 
 def print_msg(msg):
-    msg_str = ' '.join(msg)
-    print(msg_str)
-    return msg_str
+    print(' '.join(msg))
 
-def get_whole_msg(msg, prefix, sender, download=False):
+def get_whole_msg(msg, prefix, sender, download=True):
     if len(msg['FileName']) > 0 and len(msg['Url']) == 0:
         if download: # download the file into data_path directory
             fn = os.path.join(data_path, msg['FileName'])
@@ -81,7 +85,7 @@ def get_whole_msg(msg, prefix, sender, download=False):
             c = '@%s@%s' % (sending_type.get(msg['Type'], 'fil'), fn)
         else:
             c = '@%s@%s' % (sending_type.get(msg['Type'], 'fil'), msg['FileName'])
-        return ['%s:' % (prefix), c]
+        return ['%s[%s]:' % (prefix, sender), c]
     c = msg['Text']
     if len(msg['Url']) > 0:
         if len(msg['OriContent']) > 0:
@@ -96,11 +100,11 @@ def get_whole_msg(msg, prefix, sender, download=False):
                 pass
         url = html.unescape(msg['Url'])
         c += ' ' + url
-    if len(c) >= 2 and c[:2] == '//':
+    # if a message starts with '//', send as anonymous
+    if c.startswith == '//':
         sender = u'匿名'
         c = c[2:].strip()
-    prefix = '%s[%s]' % (prefix, sender)
-    return ['%s: %s' % (prefix, c)]
+    return ['%s[%s]: %s' % (prefix, sender, c)]
 
 @bot.msg_register([TEXT], isFriendChat=True, isGroupChat=False)
 def personal_msg(msg):
@@ -116,27 +120,18 @@ def personal_msg(msg):
 def accept_friend(msg):
     bot.add_friend(msg['RecommendInfo']['UserName'], 3)
 
-@bot.msg_register([TEXT, PICTURE, MAP, SHARING, RECORDING, ATTACHMENT, VIDEO],
-        isFriendChat=False, isGroupChat=True)
+@bot.msg_register([TEXT, PICTURE, MAP, SHARING, RECORDING, ATTACHMENT, VIDEO], isFriendChat=False, isGroupChat=True)
 def group_msg(msg):
     # chat bot functionality
     global as_chat_bot
-    if 'IsAt' in msg and msg['IsAt'] == True and \
-            msg['Type'] == 'Text' and \
-            msg['ToUserName'][0:2] != '@@' and \
-            msg['Text'].find(u'@' + nickname) >= 0:
+    if 'IsAt' in msg and msg['IsAt'] == True and msg['Type'] == 'Text' and \
+            msg['ToUserName'][0:2] != '@@' and msg['Text'].find(u'@' + nickname) >= 0:
         text = msg['Text'].replace(u'@' + nickname, '').strip()
         if text == u'闭嘴':
             as_chat_bot = False
             return
         if as_chat_bot:
             info = talks_robot(text)
-            if info.find(u'不知道') >= 0:
-                return
-            if info.find(u'不会') >= 0:
-                return
-            if info.find(u'抱歉') >= 0:
-                return
             return info
         return
     # forwarding functionality
@@ -146,16 +141,16 @@ def group_msg(msg):
     sender, receiver = get_sender_receiver(msg)
     if sender == '':
         sender = nickname
-    # check if the message is from the publisher groups
-    if receiver not in publishers: # if not in the publishers, do nothing
+    # check if the message is in the config
+    if receiver not in config: # if not in the config, do nothing
         return
-    # process message and send it to all the subscribed groups
-    prefix = publishers[receiver]
-    msg_send = get_whole_msg(msg, prefix=prefix, sender=sender, download=True)
-    if len(msg_send) == 0:
+    # process message and send it to all the subscribers
+    prefix = config[receiver]['prefix']
+    msg_send = get_whole_msg(msg, prefix, sender)
+    if msg_send is None or len(msg_send) == 0:
         return
     print_msg(msg_send)
-    for tosend in subscribers:
+    for tosend in config[receiver]['sub']:
         room = bot.search_chatrooms(name=tosend)
         for r in room:
             if r['UserName'] == group: # don't send back to the source
