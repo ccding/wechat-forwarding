@@ -11,11 +11,9 @@ from itchat.content import *
 
 sending_type = {'Picture': 'img', 'Video': 'vid'}
 data_path = 'data'
-group_uin = {u'酒井 9#': '42235582@chatroom',
-             u'酒井民间自救群': '2424504406@chatroom',
-             u'酒井 9# 互联B': '6203978346@chatroom'}
 publishers = {u'酒井 9#': u'[阴险]',
               u'酒井民间自救群': u'[菜刀]',
+              u'酒井Tux': u'[菜刀]',
               u'酒井 9# 互联B': u'[月亮]'}
 subscribers = [u'酒井 9#', u'酒井民间自救群', u'酒井 9# 互联B']
 nickname = ''
@@ -100,6 +98,7 @@ def get_whole_msg(msg, prefix, sender, download=False):
         c += ' ' + url
     if len(c) >= 2 and c[:2] == '//':
         sender = u'匿名'
+        c = c[2:].strip()
     prefix = '%s[%s]' % (prefix, sender)
     return ['%s: %s' % (prefix, c)]
 
@@ -164,7 +163,6 @@ def group_msg(msg):
             if r['NickName'] != tosend: # check group name exact match
                 continue
             for m in msg_send: # iterate messages (for images, videos, and files)
-                print(r['UserName'], m)
                 bot.send(m, toUserName=r['UserName'])
 
 if __name__ == '__main__':
