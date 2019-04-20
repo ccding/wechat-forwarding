@@ -101,7 +101,7 @@ def get_whole_msg(msg, prefix, sender, download=True):
         url = html.unescape(msg['Url'])
         c += ' ' + url
     # if a message starts with '//', send as anonymous
-    if c.startswith == '//':
+    if c.startswith('//'):
         sender = u'匿名'
         c = c[2:].strip()
     return ['%s[%s]: %s' % (prefix, sender, c)]
