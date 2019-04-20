@@ -1,15 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*-encoding:utf-8-*-
 
-import sys
-reload(sys)
-sys.setdefaultencoding('UTF8')
-
-import os, re, shutil, time, collections, json
+import sys, os, re, shutil, time, collections, json
 import requests
-from HTMLParser import HTMLParser
+import html
 from xml.etree import ElementTree as ETree
-import hashlib
 
 import itchat
 from itchat.content import *
@@ -71,14 +66,14 @@ def get_sender_receiver(msg):
         m = bot.search_friends(userName=msg['ToUserName'])
         if m is not None:
             receiver = m['NickName']
-    return HTMLParser().unescape(sender), HTMLParser().unescape(receiver)
+    return html.unescape(sender), html.unescape(receiver)
 
 def print_msg(msg):
     msg_str = ' '.join(msg)
-    print msg_str
+    print(msg_str)
     return msg_str
 
-def get_whole_msg(msg, prefix, download=False):
+def get_whole_msg(msg, prefix, sender, download=False):
     if len(msg['FileName']) > 0 and len(msg['Url']) == 0:
         if download: # download the file into data_path directory
             fn = os.path.join(data_path, msg['FileName'])
@@ -101,8 +96,11 @@ def get_whole_msg(msg, prefix, download=False):
                         c += ' ' + map_label.attrib['label']
             except:
                 pass
-        url = HTMLParser().unescape(msg['Url'])
+        url = html.unescape(msg['Url'])
         c += ' ' + url
+    if len(c) >= 2 and c[:2] == '//':
+        sender = u'匿名'
+    prefix = '%s[%s]' % (prefix, sender)
     return ['%s: %s' % (prefix, c)]
 
 @bot.msg_register([TEXT], isFriendChat=True, isGroupChat=False)
@@ -134,11 +132,11 @@ def group_msg(msg):
             return
         if as_chat_bot:
             info = talks_robot(text)
-            if info.find('不知道') >= 0:
+            if info.find(u'不知道') >= 0:
                 return
-            if info.find('不会') >= 0:
+            if info.find(u'不会') >= 0:
                 return
-            if info.find('抱歉') >= 0:
+            if info.find(u'抱歉') >= 0:
                 return
             return info
         return
@@ -152,13 +150,9 @@ def group_msg(msg):
     # check if the message is from the publisher groups
     if receiver not in publishers: # if not in the publishers, do nothing
         return
-    # turn on the chat bot if this magic happens
-    if msg['Type'] == 'Text' and \
-            hashlib.sha256(msg['Text']).hexdigest()[-2:] == '23':
-        as_chat_bot = True
     # process message and send it to all the subscribed groups
-    prefix = '%s[%s]' % (publishers[receiver], sender)
-    msg_send = get_whole_msg(msg, prefix=prefix, download=True)
+    prefix = publishers[receiver]
+    msg_send = get_whole_msg(msg, prefix=prefix, sender=sender, download=True)
     if len(msg_send) == 0:
         return
     print_msg(msg_send)
@@ -170,6 +164,7 @@ def group_msg(msg):
             if r['NickName'] != tosend: # check group name exact match
                 continue
             for m in msg_send: # iterate messages (for images, videos, and files)
+                print(r['UserName'], m)
                 bot.send(m, toUserName=r['UserName'])
 
 if __name__ == '__main__':
