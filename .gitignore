@@ -92,3 +92,5 @@ ENV/
 itchat.pkl
 # data file
 data
+# configuration file
+config.json
