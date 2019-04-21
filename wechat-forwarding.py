@@ -52,12 +52,11 @@ class AddMemberBot:
         count = int(user['MemberCount'])
         if count >= 500:
             return
-        # send at most once every 10 minutes
+        # send at most once every 30 minutes
         now = time.time()
-        if now - self.groups[name] < 600:
+        if now - self.groups[name] < 1800:
             return
         self.groups[name] = now
-        uname = user['UserName']
         # compute member list
         members = []
         for u in self.users:
@@ -65,7 +64,8 @@ class AddMemberBot:
             if m is None or len(m) == 0:
                 continue
             members.extend(m)
-        self.bot.add_member_into_chatroom(chatroomUserName=uname, memberList=members)
+        for m in members:
+            self.bot.send_msg('Group [%s] becomes empty!!!' % name, m['UserName'])
 
 class ChatBot:
     apikey = None
