@@ -70,6 +70,8 @@ class ForwardBot:
             return
         sender = html.unescape(sender)
         receiver = html.unescape(receiver)
+        if receiver not in self.config:
+            return
         # construct messages to send
         prefix = self.config[receiver]['prefix']
         if len(msg['FileName']) > 0 and len(msg['Url']) == 0: # file as a message
