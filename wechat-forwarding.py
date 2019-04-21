@@ -36,11 +36,6 @@ class ChatBot:
         except:
             return None
 
-    def process(self, msg):
-        m = talk(msg)
-        if m is None:
-            return
-
 class ForwardBot:
     def __init__(self, config, bot, mq):
         self.config = config['config']
