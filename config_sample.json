@@ -5,7 +5,8 @@
 			"G2": {"prefix": "[阴险]", "sub":["G3", "G1"]},
 			"G3": {"prefix": "[阴险]", "sub":["G1", "G2"]}
 		},
-		"data_path": "data"
+		"data_path": "data",
+		"max_file_size": 500000
 	},
 	"chat": {
 		"apikey": "xxx",

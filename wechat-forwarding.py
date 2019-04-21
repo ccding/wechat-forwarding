@@ -99,12 +99,15 @@ class ForwardBot:
     data_path = None
     bot = None
     mq = None
+    max_file_size = 0
 
     def __init__(self, config, bot, mq):
         if 'config' in config:
             self.config = config['config']
         if 'data_path' in config:
             self.data_path = config['data_path']
+        if 'max_file_size' in config:
+            self.max_file_size = config['max_file_size']
         self.bot = bot
         self.mq = mq
         if not os.path.exists(self.data_path):
@@ -142,6 +145,9 @@ class ForwardBot:
         if len(msg['FileName']) > 0 and len(msg['Url']) == 0: # file as a message
             fn = os.path.join(self.data_path, msg['FileName'])
             if os.path.getsize(fn) == 0:
+                return
+            if self.max_file_size > 0 and os.path.getsize(fn) > self.max_file_size:
+                # don't send large files
                 return
             content = '@%s@%s' % (Const.TYPES.get(msg['Type'], 'fil'), fn)
             txt = ['%s[%s]:' % (prefix, sender), content]
