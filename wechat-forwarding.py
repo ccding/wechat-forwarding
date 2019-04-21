@@ -65,7 +65,7 @@ class AddMemberBot:
                 continue
             members.extend(m)
         for m in members:
-            self.bot.send_msg('Group [%s] becomes empty!!!' % name, m['UserName'])
+            self.bot.send_msg('Group [%s] has available space!!!' % name, m['UserName'])
 
 class ChatBot:
     apikey = None
