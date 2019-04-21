@@ -144,10 +144,13 @@ class ForwardBot:
         prefix = self.config[receiver]['prefix']
         if len(msg['FileName']) > 0 and len(msg['Url']) == 0: # file as a message
             fn = os.path.join(self.data_path, msg['FileName'])
+            if not os.path.exists(fn):
+                return
+            # don't send zero-sized files
             if os.path.getsize(fn) == 0:
                 return
+            # don't send large files
             if self.max_file_size > 0 and os.path.getsize(fn) > self.max_file_size:
-                # don't send large files
                 return
             content = '@%s@%s' % (Const.TYPES.get(msg['Type'], 'fil'), fn)
             txt = ['%s[%s]:' % (prefix, sender), content]
