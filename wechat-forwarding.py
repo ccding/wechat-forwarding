@@ -24,6 +24,49 @@ class Const:
             fn = os.path.join(self.data_path, msg['FileName'])
             msg['Text'](fn)
 
+class AddMemberBot:
+    groups = None
+    users = None
+    bot = None
+
+    def __init__(self, config, bot):
+        if 'groups' in config:
+            self.groups = config['groups']
+        if 'users' in config:
+            self.users = config['users']
+        self.bot = bot
+
+    def process(self, msg):
+        if self.groups is None or self.users is None:
+            return
+        if self.bot is None:
+            return
+        user = msg['User']
+        name = user['NickName']
+        if name is None or len(name) == 0:
+            return
+        name = html.unescape(name) # group name
+        if name not in self.groups:
+            return
+        # check if the group is full
+        count = int(user['MemberCount'])
+        if count >= 500:
+            return
+        # send at most once every 10 minutes
+        now = time.time()
+        if now - self.groups[name] < 600:
+            return
+        self.groups[name] = now
+        uname = user['UserName']
+        # compute member list
+        members = []
+        for u in self.users:
+            m = self.bot.search_friends(u)
+            if m is None or len(m) == 0:
+                continue
+            members.extend(m)
+        self.bot.add_member_into_chatroom(chatroomUserName=uname, memberList=members)
+
 class ChatBot:
     apikey = None
     apiurl = None
@@ -169,6 +212,7 @@ if __name__ == '__main__':
     constBot = Const(config['const'])
     chatBot = ChatBot(config['chat'])
     forwardBot = ForwardBot(config['forward'], bot, mq)
+    addMemberBot = AddMemberBot(config['add'], bot)
     sendBot.start()
     # if the QR code doesn't show correctly, you can try to change the value
     # of enableCdmQR to 1 or -1 or -2. It nothing works, you can change it to
@@ -198,6 +242,7 @@ def group_msg(msg):
     else:
         # The preprocess function has to be called to download files.
         # Otherwise, files won't be forwarded or anti-revoked.
+        addMemberBot.process(msg)
         constBot.preprocess(msg)
         forwardBot.process(msg)
 

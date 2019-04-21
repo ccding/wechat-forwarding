@@ -13,5 +13,9 @@
 	},
 	"const": {
 		"data_path": "data"
+	},
+	"add": {
+		"groups": {"G0": 0, "G1": 0},
+		"users": ["Me", "You"]
 	}
 }
