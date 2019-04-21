@@ -11,7 +11,18 @@ class Const:
     PERSON = 'PERSON'
     GROUP = 'GROUP'
     TYPES = {'Picture': 'img', 'Video': 'vid'}
+    data_path = None
 
+    def __init__(self, config, bot, mq):
+        if 'data_path' in config:
+            self.data_path = config['data_path']
+
+    def preprocess(self, msg):
+        if self.data_path is None:
+            return
+        if len(msg['FileName']) > 0 and len(msg['Url']) == 0: # file as a message
+            fn = os.path.join(self.data_path, msg['FileName'])
+            msg['Text'](fn)
 
 class ChatBot:
     apikey = None
@@ -85,7 +96,6 @@ class ForwardBot:
         prefix = self.config[receiver]['prefix']
         if len(msg['FileName']) > 0 and len(msg['Url']) == 0: # file as a message
             fn = os.path.join(self.data_path, msg['FileName'])
-            msg['Text'](fn)
             if os.path.getsize(fn) == 0:
                 return
             content = '@%s@%s' % (Const.TYPES.get(msg['Type'], 'fil'), fn)
@@ -150,6 +160,7 @@ if __name__ == '__main__':
     mq = queue.Queue()
     bot = itchat.new_instance()
     sendBot = SendBot(bot, mq)
+    constBot = Const(config['const'])
     chatBot = ChatBot(config['chat'])
     forwardBot = ForwardBot(config['forward'], bot, mq)
     sendBot.start()
@@ -179,6 +190,9 @@ def group_msg(msg):
         text = msg['Text'].replace(u'@' + nickname, '').strip()
         return chatBot.talk(text)
     else:
+        # The preprocess function has to be called to download files.
+        # Otherwise, files won't be forwarded or anti-revoked.
+        constBot.preprocess(msg)
         forwardBot.process(msg)
 
 if __name__ == '__main__':

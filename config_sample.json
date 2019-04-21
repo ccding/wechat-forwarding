@@ -1,17 +1,17 @@
 {
-	"forward":
-	{
-		"config":
-		{
+	"forward": {
+		"config": {
 			"G1": {"prefix": "[阴险]", "sub":["G2", "G3"]},
 			"G2": {"prefix": "[阴险]", "sub":["G3", "G1"]},
 			"G3": {"prefix": "[阴险]", "sub":["G1", "G2"]}
 		},
 		"data_path": "data"
 	},
-
 	"chat": {
 		"apikey": "xxx",
 		"apiurl": "http://www.tuling123.com/openapi/api"
+	},
+	"const": {
+		"data_path": "data"
 	}
 }
