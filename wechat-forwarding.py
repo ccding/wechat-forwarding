@@ -13,7 +13,7 @@ class Const:
     TYPES = {'Picture': 'img', 'Video': 'vid'}
     data_path = None
 
-    def __init__(self, config, bot, mq):
+    def __init__(self, config):
         if 'data_path' in config:
             self.data_path = config['data_path']
 
