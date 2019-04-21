@@ -68,6 +68,8 @@ class ForwardBot:
             os.mkdir(self.data_path)
 
     def process(self, msg):
+        if self.config is None or self.data_path is None:
+            return
         if self.bot is None or self.mq is None:
             return
         if msg['FromUserName'][0:2] == '@@': # group chat
@@ -130,6 +132,8 @@ class ForwardBot:
         return
 
 class SendBot(threading.Thread):
+    bot = None
+    mq = None
 
     def __init__(self, bot, mq):
         super(SendBot, self).__init__()
@@ -137,6 +141,8 @@ class SendBot(threading.Thread):
         self.mq = mq
 
     def run(self):
+        if self.bot is None or self.mq is None:
+            return
         while True:
             typ, names, msgs = self.mq.get()
             print(typ, names, msgs)
