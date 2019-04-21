@@ -10,14 +10,18 @@ from itchat.content import *
 class Const:
     PERSON = 'PERSON'
     GROUP = 'GROUP'
+    TYPES = {'Picture': 'img', 'Video': 'vid'}
+
 
 class ChatBot:
-    def __init__(self, config, mq):
+    apikey = None
+    apiurl = None
+
+    def __init__(self, config):
         if 'apikey' in config:
             self.apikey = config['apikey']
         if 'apiurl' in config:
             self.apiurl = config['apiurl']
-        self.mq = mq
 
     def talk(self, info):
         if self.apikey is None or self.apiurl is None:
@@ -37,14 +41,24 @@ class ChatBot:
             return None
 
 class ForwardBot:
+    config = None
+    data_path = None
+    bot = None
+    mq = None
+
     def __init__(self, config, bot, mq):
-        self.config = config['config']
-        self.data_path = config['data_path']
+        if 'config' in config:
+            self.config = config['config']
+        if 'data_path' in config:
+            self.data_path = config['data_path']
+        self.bot = bot
         self.mq = mq
         if not os.path.exists(self.data_path):
             os.mkdir(self.data_path)
 
     def process(self, msg):
+        if self.bot is None or self.mq is None:
+            return
         if msg['FromUserName'][0:2] == '@@': # group chat
             self.process_group(msg)
         elif msg['ToUserName'][0:2] == '@@': # group chat sent by myself
@@ -57,7 +71,7 @@ class ForwardBot:
         sender = msg['ActualNickName']
         if sender is None or len(sender) == 0:
             return
-        m = bot.search_chatrooms(userName=msg['FromUserName'])
+        m = self.bot.search_chatrooms(userName=msg['FromUserName'])
         if m is None:
             return
         receiver = m['NickName']
@@ -70,11 +84,11 @@ class ForwardBot:
         # construct messages to send
         prefix = self.config[receiver]['prefix']
         if len(msg['FileName']) > 0 and len(msg['Url']) == 0: # file as a message
-            fn = os.path.join(data_path, msg['FileName'])
+            fn = os.path.join(self.data_path, msg['FileName'])
             msg['Text'](fn)
             if os.path.getsize(fn) == 0:
                 return
-            content = '@%s@%s' % (sending_type.get(msg['Type'], 'fil'), fn)
+            content = '@%s@%s' % (Const.TYPES.get(msg['Type'], 'fil'), fn)
             txt = ['%s[%s]:' % (prefix, sender), content]
         elif len(msg['Url']) > 0: # message with urls
             content = msg['Text']
@@ -106,7 +120,6 @@ class ForwardBot:
         return
 
 class SendBot(threading.Thread):
-    types = {'Picture': 'img', 'Video': 'vid'}
 
     def __init__(self, bot, mq):
         super(SendBot, self).__init__()
@@ -137,7 +150,7 @@ if __name__ == '__main__':
     mq = queue.Queue()
     bot = itchat.new_instance()
     sendBot = SendBot(bot, mq)
-    chatBot = ChatBot(config['chat'], mq)
+    chatBot = ChatBot(config['chat'])
     forwardBot = ForwardBot(config['forward'], bot, mq)
     sendBot.start()
     # if the QR code doesn't show correctly, you can try to change the value
