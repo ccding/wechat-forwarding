@@ -22,7 +22,7 @@ class Const:
             return
         if len(msg['FileName']) > 0 and len(msg['Url']) == 0: # file as a message
             fn = os.path.join(self.data_path, msg['FileName'])
-            msg['Text'](fn)
+            msg.download(fn)
 
 class AddMemberBot:
     groups = None
@@ -142,19 +142,7 @@ class ForwardBot:
             return
         # construct messages to send
         prefix = self.config[receiver]['prefix']
-        if len(msg['FileName']) > 0 and len(msg['Url']) == 0: # file as a message
-            fn = os.path.join(self.data_path, msg['FileName'])
-            if not os.path.exists(fn):
-                return
-            # don't send zero-sized files
-            if os.path.getsize(fn) == 0:
-                return
-            # don't send large files
-            if self.max_file_size > 0 and os.path.getsize(fn) > self.max_file_size:
-                return
-            content = '@%s@%s' % (Const.TYPES.get(msg['Type'], 'fil'), fn)
-            txt = ['%s[%s]:' % (prefix, sender), content]
-        elif len(msg['Url']) > 0: # message with urls
+        if len(msg['Url']) > 0: # message with urls
             content = msg['Text']
             if len(msg['OriContent']) > 0:
                 try: # handle map label
@@ -169,6 +157,19 @@ class ForwardBot:
             url = html.unescape(msg['Url'])
             content += ' ' + url
             txt = ['%s[%s]: %s' % (prefix, sender, content)]
+        elif len(msg['FileName']) > 0: # file as a message
+            fn = os.path.join(self.data_path, msg['FileName'])
+            # assume the file has already been downloaded
+            if not os.path.exists(fn):
+                return
+            # don't send zero-sized files
+            if os.path.getsize(fn) == 0:
+                return
+            # don't send large files
+            if self.max_file_size > 0 and os.path.getsize(fn) > self.max_file_size:
+                return
+            content = '@%s@%s' % (Const.TYPES.get(msg['Type'], 'fil'), fn)
+            txt = ['%s[%s]:' % (prefix, sender), content]
         else: # normal text message
             content = msg['Text']
             if content.startswith('//'): # if a message starts with '//', send as anonymous
