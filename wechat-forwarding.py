@@ -65,7 +65,10 @@ class AddMemberBot:
                 continue
             members.extend(m)
         for m in members:
-            self.bot.send_msg('Group [%s] has available space!!!' % name, m['UserName'])
+            try:
+                self.bot.send_msg('Group [%s] has available space!!!' % name, m['UserName'])
+            except:
+                pass
 
 class ChatBot:
     apikey = None
@@ -202,7 +205,10 @@ class SendBot(threading.Thread):
             if typ == Const.PERSON:
                 for n in names: # iterate users
                     for m in msgs: # iterate messages
-                        self.bot.send(m, toUserName=n)
+                        try:
+                            self.bot.send(m, toUserName=n)
+                        except:
+                            pass
             if typ == Const.GROUP:
                 for n in names:
                     t = self.bot.search_chatrooms(name=n)
@@ -210,7 +216,10 @@ class SendBot(threading.Thread):
                         if r['NickName'] != n: # check group name exact match
                             continue
                         for m in msgs: # iterate messages (for images, videos, and files)
-                            self.bot.send(m, toUserName=r['UserName'])
+                            try:
+                                self.bot.send(m, toUserName=r['UserName'])
+                            except:
+                                pass
             time.sleep(1)
 
 if __name__ == '__main__':
