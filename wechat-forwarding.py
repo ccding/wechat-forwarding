@@ -6,7 +6,19 @@ from xml.etree import ElementTree as ETree
 
 import itchat
 from itchat.content import *
-from timeout import timeout
+import signal
+
+class timeout:
+    def __init__(self, seconds=1, error_message='Timeout'):
+        self.seconds = seconds
+        self.error_message = error_message
+    def handle_timeout(self, signum, frame):
+        raise TimeoutError(self.error_message)
+    def __enter__(self):
+        signal.signal(signal.SIGALRM, self.handle_timeout)
+        signal.alarm(self.seconds)
+    def __exit__(self, type, value, traceback):
+        signal.alarm(0)
 
 class Const:
     PERSON = 'PERSON'
@@ -23,7 +35,8 @@ class Const:
             return
         if len(msg['FileName']) > 0 and len(msg['Url']) == 0: # file as a message
             fn = os.path.join(self.data_path, msg['FileName'])
-            msg.download(fn)
+            with timeout(seconds=30):
+                msg.download(fn)
 
 class AddMemberBot:
     groups = None
@@ -242,32 +255,43 @@ if __name__ == '__main__':
 
 # register itchat function: personal text messages
 @bot.msg_register([TEXT], isFriendChat=True, isGroupChat=False)
-@timeout(5)
 def personal_msg(msg):
     text = msg['Text'].strip()
-    return chatBot.talk(text)
+    try:
+        c = chatBot.talk(text)
+    except:
+        return
+    return c
 
 # register itchat function: add friend
 @bot.msg_register([FRIENDS])
-@timeout(5)
 def accept_friend(msg):
-    bot.add_friend(msg['RecommendInfo']['UserName'], 3)
+    try:
+        bot.add_friend(msg['RecommendInfo']['UserName'], 3)
+    except:
+        pass
 
 # register itchat function: group messages
 @bot.msg_register([TEXT, PICTURE, MAP, SHARING, RECORDING, ATTACHMENT, VIDEO], isFriendChat=False, isGroupChat=True)
-@timeout(30)
 def group_msg(msg):
     # if is at, do chat bot
     if 'IsAt' in msg and msg['IsAt'] == True and msg['Type'] == 'Text' and \
             msg['ToUserName'][0:2] != '@@' and msg['Text'].find(u'@' + nickname) >= 0:
         text = msg['Text'].replace(u'@' + nickname, '').strip()
-        return chatBot.talk(text)
+        try:
+            c = chatBot.talk(text)
+        except:
+            return
+        return c
     else:
-        # The preprocess function has to be called to download files.
-        # Otherwise, files won't be forwarded or anti-revoked.
-        addMemberBot.process(msg)
-        constBot.preprocess(msg)
-        forwardBot.process(msg)
+        try:
+            # The preprocess function has to be called to download files.
+            # Otherwise, files won't be forwarded or anti-revoked.
+            addMemberBot.process(msg)
+            constBot.preprocess(msg)
+            forwardBot.process(msg)
+        except:
+            pass
 
 if __name__ == '__main__':
     bot.run()
