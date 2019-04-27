@@ -6,6 +6,7 @@ from xml.etree import ElementTree as ETree
 
 import itchat
 from itchat.content import *
+from timeout import timeout
 
 class Const:
     PERSON = 'PERSON'
@@ -241,17 +242,20 @@ if __name__ == '__main__':
 
 # register itchat function: personal text messages
 @bot.msg_register([TEXT], isFriendChat=True, isGroupChat=False)
+@timeout(5)
 def personal_msg(msg):
     text = msg['Text'].strip()
     return chatBot.talk(text)
 
 # register itchat function: add friend
 @bot.msg_register([FRIENDS])
+@timeout(5)
 def accept_friend(msg):
     bot.add_friend(msg['RecommendInfo']['UserName'], 3)
 
 # register itchat function: group messages
 @bot.msg_register([TEXT, PICTURE, MAP, SHARING, RECORDING, ATTACHMENT, VIDEO], isFriendChat=False, isGroupChat=True)
+@timeout(30)
 def group_msg(msg):
     # if is at, do chat bot
     if 'IsAt' in msg and msg['IsAt'] == True and msg['Type'] == 'Text' and \
