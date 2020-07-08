@@ -7,18 +7,7 @@ from xml.etree import ElementTree as ETree
 import itchat
 from itchat.content import *
 import signal
-
-class timeout:
-    def __init__(self, seconds=1, error_message='Timeout'):
-        self.seconds = seconds
-        self.error_message = error_message
-    def handle_timeout(self, signum, frame):
-        raise TimeoutError(self.error_message)
-    def __enter__(self):
-        signal.signal(signal.SIGALRM, self.handle_timeout)
-        signal.alarm(self.seconds)
-    def __exit__(self, type, value, traceback):
-        signal.alarm(0)
+import timeout_decorator
 
 class Const:
     PERSON = 'PERSON'
@@ -30,13 +19,13 @@ class Const:
         if 'data_path' in config:
             self.data_path = config['data_path']
 
+    @timeout_decorator.timeout(60)
     def preprocess(self, msg):
         if self.data_path is None:
             return
         if len(msg['FileName']) > 0 and len(msg['Url']) == 0: # file as a message
             fn = os.path.join(self.data_path, msg['FileName'])
-            with timeout(seconds=30):
-                msg.download(fn)
+            msg.download(fn)
 
 class AddMemberBot:
     groups = None
