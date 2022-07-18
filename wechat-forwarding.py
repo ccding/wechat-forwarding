@@ -3,6 +3,7 @@
 
 import os, json, time, requests, html, threading, queue
 from xml.etree import ElementTree as ETree
+import datetime
 
 import itchat
 from itchat.content import *
@@ -29,6 +30,7 @@ class Const:
 
 class AddMemberBot:
     groups = None
+    members = None
     users = None
     bot = None
 
@@ -60,7 +62,7 @@ class AddMemberBot:
         if now - self.groups[name] < 1800:
             return
         self.groups[name] = now
-        # compute member list
+        # send notification
         members = []
         for u in self.users:
             m = self.bot.search_friends(u)
@@ -86,17 +88,31 @@ class ChatBot:
     def talk(self, info):
         if self.apikey is None or self.apiurl is None:
             return None
-        data = {'key': self.apikey, 'info': info.lower()}
+        data = {
+                "reqType": 0,
+                "perception": {
+                    "inputText": {
+                        "text": info.lower()
+                        }
+                    },
+                "userInfo": {
+                    "apiKey": self.apikey,
+                    "userId": "0"
+                    }
+                }
         try:
-            req = requests.post(self.apiurl, data=data, timeout=5).text
-            txt = json.loads(req)['text']
-            if txt.find(u'不知道') >= 0:
-                return None
-            if txt.find(u'不会') >= 0:
-                return None
-            if txt.find(u'抱歉') >= 0:
-                return None
-            return txt
+            req = requests.post(self.apiurl, data=json.dumps(data), timeout=5).text
+            results = json.loads(req)['results']
+            for group in results:
+                if group['resultType'] == 'text':
+                    txt = group['values']['text']
+                    if txt.find(u'不知道') >= 0:
+                        return None
+                    if txt.find(u'不会') >= 0:
+                        return None
+                    if txt.find(u'抱歉') >= 0:
+                        return None
+                    return txt
         except:
             return None
 
@@ -204,7 +220,7 @@ class SendBot(threading.Thread):
             return
         while True:
             typ, names, msgs = self.mq.get()
-            print(typ, names, msgs)
+            print(datetime.datetime.now(), typ, names, msgs)
             if typ == Const.PERSON:
                 for n in names: # iterate users
                     for m in msgs: # iterate messages

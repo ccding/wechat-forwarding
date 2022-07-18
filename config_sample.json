@@ -10,7 +10,7 @@
 	},
 	"chat": {
 		"apikey": "xxx",
-		"apiurl": "http://www.tuling123.com/openapi/api"
+		"apiurl": "http://openapi.turingapi.com/openapi/api/v2"
 	},
 	"const": {
 		"data_path": "data"
